@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Bitácora local de prompts (hook UserPromptSubmit): no se publica
+bitacora-ia.md
