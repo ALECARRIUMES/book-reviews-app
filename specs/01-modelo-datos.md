@@ -1,6 +1,6 @@
 # SPEC 01 — Modelo de datos de reseñas de libros
 
-> **Estado:** Aprobada
+> **Estado:** Implementada
 > **Depende de:** Ninguna
 > **Fecha:** 2026-10-17
 
@@ -158,29 +158,29 @@ Los permisos se verifican en tres niveles distintos, y uno no sustituye a otro:
 - **Políticas RLS existentes** (CA10): qué políticas hay en el catálogo, consultadas desde un rol administrativo.
 - **Acceso efectivo comprobado** (CA14): qué filas ve realmente una sesión que actúa como `anon`, con GRANT y RLS aplicados a la vez.
 
-- [ ] CA1 — Existen exactamente las tablas `readers`, `books` y `reviews` en `public`. Verificación: SQL sobre `information_schema.tables` con `table_schema = 'public'`.
-- [ ] CA2 — `readers` no tiene columna `email`. Verificación: SQL sobre `information_schema.columns` → 0 filas para `table_name = 'readers' AND column_name = 'email'`.
-- [ ] CA3 — Cada tabla tiene PK sobre `id` de tipo `bigint` identity. Verificación: SQL sobre `pg_constraint` (`contype = 'p'`, 3 filas) e `information_schema.columns` (`is_identity = 'YES'`).
-- [ ] CA4 — `reviews` tiene dos FK, hacia `readers` y hacia `books`, ambas con `ON DELETE RESTRICT`. Verificación: SQL sobre `pg_constraint` con `contype = 'f'` y `conrelid = 'public.reviews'::regclass` → 2 filas con `confdeltype = 'r'`.
-- [ ] CA5 — Existen las restricciones UNIQUE `readers(full_name)`, `books(title, author)` y `reviews(reader_id, book_id)`. Verificación: SQL sobre `pg_constraint` con `contype = 'u'` → 3 filas.
-- [ ] CA6 — Existen los CHECK de `full_name`, `title`, `author`, `published_year`, `rating` y `comment`. Verificación: SQL sobre `pg_constraint` con `contype = 'c'` y `pg_get_constraintdef`.
-- [ ] CA7 — Recuentos de la semilla: `readers` = 4, `books` = 5, `reviews` = 5. Verificación: SQL con `count(*)` por tabla.
-- [ ] CA8 — No hay reseñas huérfanas. Verificación: SQL con `LEFT JOIN` de `reviews` a `readers` y a `books`, filtrando padres nulos → 0 filas.
-- [ ] CA9 — Privilegios configurados correctos para `anon` y `authenticated`. Verificación: SQL administrativo con `has_table_privilege`:
+- [x] CA1 — Existen exactamente las tablas `readers`, `books` y `reviews` en `public`. Verificación: SQL sobre `information_schema.tables` con `table_schema = 'public'`.
+- [x] CA2 — `readers` no tiene columna `email`. Verificación: SQL sobre `information_schema.columns` → 0 filas para `table_name = 'readers' AND column_name = 'email'`.
+- [x] CA3 — Cada tabla tiene PK sobre `id` de tipo `bigint` identity. Verificación: SQL sobre `pg_constraint` (`contype = 'p'`, 3 filas) e `information_schema.columns` (`is_identity = 'YES'`).
+- [x] CA4 — `reviews` tiene dos FK, hacia `readers` y hacia `books`, ambas con `ON DELETE RESTRICT`. Verificación: SQL sobre `pg_constraint` con `contype = 'f'` y `conrelid = 'public.reviews'::regclass` → 2 filas con `confdeltype = 'r'`.
+- [x] CA5 — Existen las restricciones UNIQUE `readers(full_name)`, `books(title, author)` y `reviews(reader_id, book_id)`. Verificación: SQL sobre `pg_constraint` con `contype = 'u'` → 3 filas.
+- [x] CA6 — Existen los CHECK de `full_name`, `title`, `author`, `published_year`, `rating` y `comment`. Verificación: SQL sobre `pg_constraint` con `contype = 'c'` y `pg_get_constraintdef`.
+- [x] CA7 — Recuentos de la semilla: `readers` = 4, `books` = 5, `reviews` = 5. Verificación: SQL con `count(*)` por tabla.
+- [x] CA8 — No hay reseñas huérfanas. Verificación: SQL con `LEFT JOIN` de `reviews` a `readers` y a `books`, filtrando padres nulos → 0 filas.
+- [x] CA9 — Privilegios configurados correctos para `anon` y `authenticated`. Verificación: SQL administrativo con `has_table_privilege`:
   - `SELECT` = true en las tres tablas.
   - `INSERT` = true solo en `reviews`.
   - `UPDATE`, `DELETE`, `TRUNCATE`, `REFERENCES` y `TRIGGER` = false en las tres tablas.
-- [ ] CA10 — RLS habilitado y exactamente cuatro políticas. Verificación: SQL sobre `pg_class.relrowsecurity` (true en las tres tablas) y `pg_policies`: 3 de `SELECT` y 1 de `INSERT` en `reviews`, todas para `anon` y `authenticated`.
-- [ ] CA11 — Consulta por nombres. Verificación: SQL con `JOIN` de `reviews`, `readers` y `books` que devuelve `full_name`, `title`, `rating` y `comment`. Deben salir exactamente las 5 reseñas de la tabla de datos de ejemplo, con sus pares, ratings y comentarios.
-- [ ] CA12 — Las restricciones rechazan datos inválidos y no queda ningún dato. Verificación: prueba manual del estudiante en el SQL Editor, porque `verificador` solo ejecuta `SELECT`. Cada caso va en su propia transacción (`BEGIN; … ROLLBACK;`) o tras un `SAVEPOINT` con `ROLLBACK TO SAVEPOINT`; así un error no aborta los casos siguientes. Deben fallar:
+- [x] CA10 — RLS habilitado y exactamente cuatro políticas. Verificación: SQL sobre `pg_class.relrowsecurity` (true en las tres tablas) y `pg_policies`: 3 de `SELECT` y 1 de `INSERT` en `reviews`, todas para `anon` y `authenticated`.
+- [x] CA11 — Consulta por nombres. Verificación: SQL con `JOIN` de `reviews`, `readers` y `books` que devuelve `full_name`, `title`, `rating` y `comment`. Deben salir exactamente las 5 reseñas de la tabla de datos de ejemplo, con sus pares, ratings y comentarios.
+- [x] CA12 — Las restricciones rechazan datos inválidos y no queda ningún dato. Verificación: prueba manual del estudiante en el SQL Editor, porque `verificador` solo ejecuta `SELECT`. Cada caso va en su propia transacción (`BEGIN; … ROLLBACK;`) o tras un `SAVEPOINT` con `ROLLBACK TO SAVEPOINT`; así un error no aborta los casos siguientes. Deben fallar:
   - `rating = 6`;
   - una reseña duplicada para un par existente;
   - un `reader_id` inexistente;
   - un `DELETE` de un lector que tiene reseñas.
 
   Al terminar, el recuento sigue siendo 4/5/5.
-- [ ] CA13 — Panel de Supabase. Verificación: el Table Editor muestra las tres tablas con sus datos y las relaciones de `reviews`. En el Security Advisor no aparece la alerta "RLS disabled in public" para estas tablas. Otros avisos no invalidan el criterio, por ejemplo uno por política permisiva en el `INSERT` de `reviews`. Se anotan y se revisan.
-- [ ] CA14 — Acceso efectivo de lectura como `anon`. `anon` lee las tres tablas con GRANT y RLS aplicados: 4 filas en `readers`, 5 en `books` y 5 en `reviews`. Verificación: SQL de solo lectura en una transacción que termina con `ROLLBACK`:
+- [x] CA13 — Panel de Supabase. Verificación: el Table Editor muestra las tres tablas con sus datos y las relaciones de `reviews`. En el Security Advisor no aparece la alerta "RLS disabled in public" para estas tablas. Otros avisos no invalidan el criterio, por ejemplo uno por política permisiva en el `INSERT` de `reviews`. Se anotan y se revisan.
+- [x] CA14 — Acceso efectivo de lectura como `anon`. `anon` lee las tres tablas con GRANT y RLS aplicados: 4 filas en `readers`, 5 en `books` y 5 en `reviews`. Verificación: SQL de solo lectura en una transacción que termina con `ROLLBACK`:
 
   ```sql
   BEGIN;
@@ -198,6 +198,18 @@ Los permisos se verifican en tres niveles distintos, y uno no sustituye a otro:
   - No cumple si algún recuento es 0, aunque no haya error: el acceso efectivo falla y requiere diagnóstico. No se atribuye automáticamente a una política RLS faltante. Puede deberse a la política, a la semilla o a otra causa; se contrasta con CA7 y CA10 antes de concluir.
 
   La consulta no escribe datos y el `ROLLBACK` deshace el cambio de rol. Puede ejecutarla el estudiante en el SQL Editor, o `verificador` si sus reglas permiten `SET LOCAL ROLE`. Si el entorno no permite ejecutarla (por ejemplo, el rol de la sesión no puede asumir `anon`, o la herramienta solo acepta `SELECT` sueltos), el criterio se marca **No verificado** y se anota el motivo o el error literal. No se deduce su resultado de CA9 ni de CA10.
+
+### Validación final
+
+Implementada con las migraciones `create_book_reviews_tables` y `grant_and_rls_book_reviews` más la semilla. Los 14 criterios se cumplen:
+
+- **CA1–CA8, CA10 y CA11:** consultas SQL de solo lectura mediante MCP (`arquitecto-bd` y `verificador`).
+- **CA9:** `has_table_privilege` mediante MCP para `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `REFERENCES` y `TRIGGER`. Las seis comprobaciones de `TRUNCATE` (2 roles × 3 tablas) se ejecutaron en el SQL Editor y devolvieron `false`.
+- **CA12:** las cuatro pruebas de restricciones fallaron como se esperaba, cada una en su propia transacción. Los recuentos siguen en 4/5/5.
+- **CA13:** el estudiante confirmó las seis comprobaciones visuales en el panel de Supabase.
+- **CA14:** en el SQL Editor, `current_user = anon` y recuentos `readers` = 4, `books` = 5, `reviews` = 5 (captura del SQL Editor).
+
+Asunto independiente, fuera de esta spec: el hook `guardian-bd.js` no detecta un `DELETE` sin `WHERE` dentro de un CTE cuando la misma sentencia contiene otro `WHERE` posterior. La limitación es anterior a la corrección de los falsos positivos de `ON DELETE` y queda documentada para tratarse por separado.
 
 ## Decisiones tomadas y descartadas
 
