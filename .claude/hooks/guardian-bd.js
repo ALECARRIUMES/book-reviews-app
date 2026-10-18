@@ -2,7 +2,8 @@
 // Hook PreToolUse: Guardián de base de datos.
 // Bloquea SQL destructivo enviado a mcp__supabase__execute_sql y
 // mcp__supabase__apply_migration: DROP TABLE, DROP SCHEMA, TRUNCATE y
-// DELETE sin WHERE. Exit 2 = bloquear (motivo por stderr), exit 0 = permitir.
+// DELETE sin WHERE (las cláusulas ON DELETE de las FOREIGN KEY no cuentan como
+// DELETE). Exit 2 = bloquear (motivo por stderr), exit 0 = permitir.
 // Ante cualquier entrada que no se pueda inspeccionar con seguridad, bloquea.
 
 const BLOCK = 2;
@@ -92,8 +93,17 @@ const RULES = [
   { re: /\bTRUNCATE\b/i, reason: "TRUNCATE no está permitido" },
 ];
 
+// Acción referencial de una FOREIGN KEY (ON DELETE RESTRICT, CASCADE, ...).
+// No es una sentencia DELETE: se retira solo esta cláusula exacta antes de
+// buscar DELETE, de modo que cualquier DELETE real de la sentencia se sigue
+// inspeccionando. Otras construcciones con DELETE (reglas, triggers, políticas)
+// no coinciden y se siguen tratando como hasta ahora.
+const FK_ON_DELETE_ACTION =
+  /\bON\s+DELETE\s+(?:RESTRICT|CASCADE|NO\s+ACTION|SET\s+NULL|SET\s+DEFAULT)\b/gi;
+
 function findDeleteWithoutWhere(structure) {
-  for (const statement of structure.split(";")) {
+  for (const raw of structure.split(";")) {
+    const statement = raw.replace(FK_ON_DELETE_ACTION, " ");
     const del = /\bDELETE\b/i.exec(statement);
     if (!del) continue;
     const rest = statement.slice(del.index + del[0].length);

@@ -132,11 +132,18 @@ supabase.from('reviews').select('id, rating, comment, created_at, readers(full_n
 
 Requisito previo: el estudiante revisa esta spec y cambia su estado a `Aprobada`. El subagente `arquitecto-bd` no actúa sin ese estado.
 
-1. **Crear las tablas.** Migración `create_book_reviews_tables`: las tres tablas con PK, FK, CHECK y UNIQUE. Verificación: `list_tables` muestra `readers`, `books` y `reviews` con sus columnas.
-2. **Permisos y RLS.** Migración `grant_and_rls_book_reviews`:
-   - revocar los privilegios de tabla que sobren para `anon` y `authenticated`;
-   - conceder los GRANT definidos;
-   - habilitar RLS y crear las cuatro políticas.
+1. **Crear las tablas cerradas.** Migración `create_book_reviews_tables`:
+   - crea las tres tablas con PK, FK, CHECK y UNIQUE;
+   - inmediatamente después, revoca todos los privilegios de tabla de `anon` y `authenticated` sobre las tres tablas (`REVOKE ALL`);
+   - antes de terminar, habilita RLS en las tres tablas.
+
+   Así no queda ninguna ventana con privilegios por defecto sin RLS. Hasta la migración 2, solo los roles administrativos acceden a las tablas.
+
+   Verificación: `list_tables` muestra `readers`, `books` y `reviews` con sus columnas.
+2. **Permisos y políticas.** Migración `grant_and_rls_book_reviews`:
+   - puede repetir `REVOKE ALL` sobre las tres tablas para `anon` y `authenticated`; es redundante e idempotente y garantiza el estado final;
+   - concede los GRANT definidos;
+   - crea las cuatro políticas RLS.
 
    Verificación: consultas sobre `has_table_privilege`, `pg_class.relrowsecurity` y `pg_policies`.
 3. **Datos de ejemplo.** Insertar la semilla con `execute_sql` en el orden `readers` → `books` → `reviews`, resolviendo las FK por nombre. Verificación: recuentos 4/5/5 y `list_tables` final.
