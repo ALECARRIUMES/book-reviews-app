@@ -7,8 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `book-reviews-app` is an academic lab project: a Book Reviews System (Sistema de Reseñas de Libros).
 
 - **Stack:** React, Vite, JavaScript (no TypeScript), `@supabase/supabase-js`. Oxlint is the linter.
-- **Preliminary data model:** three tables, `readers`, `books` and `reviews`. These are planned only. No tables, schema or migrations exist in the repo yet.
-- **Methodology:** Spec-Driven Development (SDD). Write and approve a spec for a feature before implementing it. No specs exist yet.
+- **Data model (SPEC 01, Implementada, 14/14 acceptance criteria validated):** tables `readers`, `books` and `reviews` exist in Supabase with RLS enabled. `anon` and `authenticated` can `SELECT` all three tables and `INSERT` only into `reviews`; they have no `UPDATE` or `DELETE`. The migrations (`create_book_reviews_tables`, `grant_and_rls_book_reviews`) live in Supabase, not in the repo. The 4/5/5 seed counts are the historical validation of SPEC 01, not a limit: frontend tests add reviews, so do not treat higher counts as an error or delete rows to restore them.
+- **Methodology:** Spec-Driven Development (SDD). Specs live in `specs/NN-slug.md`; draft them with the `/nuevo-spec` skill. A spec must be `Aprobada` before it is implemented. `specs/01-modelo-datos.md` is `Implementada`.
 
 ## Commands
 
